@@ -1,4 +1,4 @@
-sudoku: main.cpp nanoglass.h
+sudoku: main.cpp nanoglass.h bit.h sudoku.h
 	clang++ main.cpp -g -O3 -o sudoku
 
 clean:
