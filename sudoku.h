@@ -26,6 +26,12 @@ void pretty_print_char_rep(char p[81]) {
     }
 }
 
+void print_char_rep(char p[81]) {
+    for (int i = 0; i < 81; i++) {
+        printf("%c", p[i]);
+    }
+}
+
 // @WARNING: Only for validation purpose.
 // This kind of performance is crap.
 bool check_validty(char sudoku[]) {

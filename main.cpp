@@ -3,7 +3,6 @@
 #include <assert.h>
 #include <ctype.h>
 #include <stdint.h>
-#include <algorithm>
 
 typedef uint32_t u32;
 typedef int32_t  i32;
@@ -19,6 +18,20 @@ typedef int32_t  i32;
 #include "bench.cpp"
 
 int main() {
-    bench();
+    //bench();
+    char path[4096]; // Hope that TA won't overrun my buffer.
+    scanf("%s", path);
+    printf("%s\n", path);
+
+    // @FIXME: Don't blow up the memory
+    auto test_file = read_entire_file(path);
+
+    auto puzzles = load_puzzles(test_file);
+
+    for (auto p : puzzles) {
+        dance_solve(p);
+        //pretty_print_char_rep(p);
+        print_char_rep(p); printf("\n");
+    }
     return 0;
 }
