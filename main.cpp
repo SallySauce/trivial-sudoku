@@ -23,7 +23,6 @@ int main() {
     char path[4096]; // Hope that TA won't overrun my buffer.
     int r = scanf("%s", path);
     assert(r == 1);
-    printf("%s\n", path);
 
     // @FIXME: Don't blow up the memory
     auto test_file = read_entire_file(path);
