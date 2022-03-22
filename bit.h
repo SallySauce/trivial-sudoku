@@ -3,6 +3,9 @@
 
 #include <vector>
 #include <cctype>
+
+#include "sudoku.h"
+
 using std::vector;
 
 struct Bit_Rep {
@@ -33,13 +36,7 @@ struct Bit_Rep {
     }
 
     void pretty_print() {
-        for (int i = 0; i < 81; i++) {
-            printf("%c ", ".123456789"[board[i] - '0']);
-
-            if ((i + 1) % 9 == 0) {
-                printf("\n");
-            }
-        }
+        pretty_print_char_rep(board);
     }
 };
 
