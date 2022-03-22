@@ -1,4 +1,4 @@
-sudoku_solve: main.cpp nanoglass.h bit.h sudoku.h dancing.h
+sudoku_solve: main.cpp nanoglass.h bit.h sudoku.h dancing.h bench.cpp
 	g++ main.cpp -g -O3 -o sudoku_solve -std=c++11
 
 clean:
