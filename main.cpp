@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <stdint.h>
+#include <algorithm>
 
 typedef uint32_t u32;
 typedef int32_t  i32;
@@ -20,7 +21,8 @@ typedef int32_t  i32;
 int main() {
     //bench();
     char path[4096]; // Hope that TA won't overrun my buffer.
-    scanf("%s", path);
+    int r = scanf("%s", path);
+    assert(r == 1);
     printf("%s\n", path);
 
     // @FIXME: Don't blow up the memory

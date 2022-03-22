@@ -39,6 +39,7 @@ Cul_Run_Time(){
 
 	DISK=$(df -h |grep ${root_Directory} |awk '{print $1}')
 
+	DISK="/dev/vda1"
 	# 文件系统非ext4则退出
 	[[ "`df -T | grep ${DISK} |awk '{print $2}'`" != "ext4" ]] && { echo ${DISK} is not mount on type ext4! Only ext4 file system support!;exit 2; }
 

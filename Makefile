@@ -7,4 +7,7 @@ clean:
 run: sudoku_solve
 	./sudoku_solve
 
+test: sudoku_solve
+	./Lab1.sh test_group answer_group
+
 all: sodoku_solve
