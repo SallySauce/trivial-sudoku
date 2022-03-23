@@ -20,12 +20,13 @@ typedef int32_t  i32;
 
 int main() {
     //bench();
+    /*
     sem_unlink("/sem_submit");
     sem_unlink("/sem_complete");
     sem_unlink("/sem_done");
     init_threads();
     start_scheduling();
-    /*
+    */
     char path[4096]; // Hope that TA won't overrun my buffer.
     int r = scanf("%s", path);
     assert(r == 1);
@@ -40,6 +41,7 @@ int main() {
         //pretty_print_char_rep(p);
         print_char_rep(p); printf("\n");
     }
+    /*
     */
     return 0;
 }
