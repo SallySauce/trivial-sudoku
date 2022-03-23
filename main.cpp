@@ -16,7 +16,6 @@ typedef int32_t  i32;
 #include "bit.h"
 #include "dancing.h"
 
-#include "bench.cpp"
 #include "threading.cpp"
 
 int main() {

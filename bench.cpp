@@ -42,7 +42,7 @@ void bench() {
     {
         auto elapsed_time =
             measure([puzzles, bench_func]() { bench_func(puzzles); });
-        printf("(%s) elapsed: %lld us (%.2f puzzles/sec)\n", bench_name,
+        printf("(%s) elapsed: %ld us (%.2f puzzles/sec)\n", bench_name,
                elapsed_time, puzzles.size() * 1e6 / (float)(elapsed_time));
     }
 
