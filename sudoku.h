@@ -4,17 +4,23 @@
 #include "stdlib.h"
 
 #include "file.h"
+#include "common.h"
 
 using std::vector;
 
-vector<char *> load_puzzles(EntireFile file) {
-    vector<char *> puzzles;
+const Slice<char *> load_puzzles(EntireFile file) {
+    const Slice<char *> puzzles;
 
+    size_t num_of_puzzles = file.size / 82;
+
+    auto array = (char **)malloc(num_of_puzzles * sizeof(char *));
+    auto arena = (char *)malloc(num_of_puzzles * 81);
+    size_t i = 0;
     for (char *p = file.data; p - file.data < file.size; p += 82) {
-        puzzles.push_back(p);
+        array[i++] = p;
     }
 
-    return puzzles;
+    return {array, 0, num_of_puzzles};
 }
 
 void pretty_print_char_rep(const char p[81]) {

@@ -21,7 +21,11 @@ typedef int32_t  i32;
 
 int main() {
     //bench();
-    create_workers();
+    sem_unlink("/sem_submit");
+    sem_unlink("/sem_complete");
+    sem_unlink("/sem_done");
+    init_threads();
+    start_scheduling();
     /*
     char path[4096]; // Hope that TA won't overrun my buffer.
     int r = scanf("%s", path);

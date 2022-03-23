@@ -1,7 +1,7 @@
 
 #define VALIDATION 0
 
-void bench_bit(const vector<char *> &puzzles) {
+void bench_bit(const Slice<char *> &puzzles) {
     vector<Bit_Rep> bit_reps;
     std::transform(puzzles.begin(), puzzles.end(), std::back_inserter(bit_reps),
                    [](char *str_rep) -> Bit_Rep { return Bit_Rep(str_rep); });
@@ -17,7 +17,7 @@ void bench_bit(const vector<char *> &puzzles) {
     }
 }
 
-void bench_dance(const vector<char *> &puzzles) {
+void bench_dance(const Slice<char *> &puzzles) {
 
     for (auto p : puzzles) {
         //pretty_print_char_rep(p); printf("\n");
