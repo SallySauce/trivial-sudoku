@@ -70,7 +70,7 @@ struct TaskResult {
 };
 
 // @FIXME: Lock these.
-std::vector<Task>               submission_queue;
+std::queue<Task>                submission_queue;
 std::priority_queue<TaskResult> completion_queue;
 
 sem_t *submit   = nullptr;
@@ -94,8 +94,8 @@ void *solver_thread(void *arg) {
         // @FIXME: Lock the queue
         pthread_mutex_lock(&submit_lock);
         assert(submission_queue.size() > 0);
-        auto task = submission_queue.back();
-        submission_queue.pop_back();
+        auto task = submission_queue.front();
+        submission_queue.pop();
         pthread_mutex_unlock(&submit_lock);
 
         // Work on the puzzles
@@ -192,14 +192,14 @@ void start_scheduling() {
         pthread_mutex_lock(&submit_lock);
         constexpr size_t batch = 1024;
         if (puzzles.length < batch) {
-            submission_queue.emplace_back(curr_timestamp++, puzzles);
+            submission_queue.emplace(curr_timestamp++, puzzles);
             total_tasks++;
             sem_post(submit);
         } else {
             for (size_t i = 0; i < puzzles.length; i += batch) {
                 size_t width = std::min(batch, puzzles.length - i);
-                submission_queue.emplace_back(
-                    curr_timestamp++, Slice<char *>(puzzles.data, i, width));
+                submission_queue.emplace(curr_timestamp++,
+                                         Slice<char *>(puzzles.data, i, width));
                 total_tasks++;
             }
 
