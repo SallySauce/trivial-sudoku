@@ -1,0 +1,28 @@
+name: CI
+on:
+  push:
+    branches:
+      - main
+defaults:
+  run:
+    shell: bash
+jobs:
+  bench:
+    name: Benchmark
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install hyperfine
+        run: wget https://github.com/sharkdp/hyperfine/releases/download/v1.3.0/hyperfine_1.3.0_amd64.deb && sudo dpkg -i hyperfine_1.3.0_amd64.deb
+
+      - name: Run benchmark
+        run: make bench
+
+      - name: Archive benchmark numbers
+        uses: actions/upload-artifact@v3
+        with:
+          name: benchmark-report
+          path: benchmark_report.json
+

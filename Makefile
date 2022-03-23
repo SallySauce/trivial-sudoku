@@ -18,7 +18,7 @@ verify: sudoku_solve
 	@diff $(ANS_FILE) <(echo "$(TEST_FILE)" | ./sudoku_solve) && echo -e "\033[1;32mYeah!!! Everything looks alright!\033[0m"
 
 bench: sudoku_solve
-	@hyperfine "make verify N=50" "make verify N=1000" "make verify N=10000"
+	@hyperfine "make verify N=50" "make verify N=1000" "make verify N=10000" --export-json benchmark_report.json
 
 test: sudoku_solve
 	./Lab1.sh test_group answer_group
