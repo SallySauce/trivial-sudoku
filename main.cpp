@@ -18,15 +18,7 @@ typedef int32_t  i32;
 
 #include "threading.cpp"
 
-int main() {
-    //bench();
-    /*
-    sem_unlink("/sem_submit");
-    sem_unlink("/sem_complete");
-    sem_unlink("/sem_done");
-    init_threads();
-    start_scheduling();
-    */
+void start_single_thread_version() {
     char path[4096]; // Hope that TA won't overrun my buffer.
     int r = scanf("%s", path);
     assert(r == 1);
@@ -41,7 +33,10 @@ int main() {
         //pretty_print_char_rep(p);
         print_char_rep(p); printf("\n");
     }
-    /*
-    */
+}
+
+int main() {
+    start_threading_version();
+    // start_single_thread_version();
     return 0;
 }

@@ -5,6 +5,9 @@
 #include <assert.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <queue>
+#include <vector>
+#include <algorithm>
 
 #include "common.h"
 
@@ -49,27 +52,32 @@ int get_number_of_cores() {
 struct Task {
     size_t timestamp;       // A strictly increasing integer that indicates the order of job.
     Slice<char *> puzzles;  // The task.
+
+    Task(size_t ts, Slice<char *> ps) : timestamp(ts), puzzles(ps) {}
 };
 
 struct TaskResult {
     size_t        tid;
     size_t        timestamp;
     Slice<char *> puzzles;
+
+    TaskResult(size_t tid, size_t ts, Slice<char *> ps)
+        : tid(tid), timestamp(ts), puzzles(ps) {}
+
+    bool operator<(const TaskResult &rhs) const {
+        return timestamp > rhs.timestamp;
+    }
 };
 
-// @FIXME: Hope that guolab has no more than 512 cores.
-#define MAX_THREADS 512
-
-Task       submission_queue[MAX_THREADS] = {};
-TaskResult completion_queue[MAX_THREADS] = {};
-
 // @FIXME: Lock these.
-size_t submission_count = 0;
-size_t completion_count = 0;
+std::vector<Task>               submission_queue;
+std::priority_queue<TaskResult> completion_queue;
 
 sem_t *submit   = nullptr;
 sem_t *complete = nullptr;
 sem_t *done     = nullptr;
+pthread_mutex_t submit_lock;
+pthread_mutex_t complete_lock;
 
 // @FIXME: Lock thses
 size_t total_tasks  = 0;
@@ -84,8 +92,11 @@ void *solver_thread(void *arg) {
         
         // Pull a task from submission queue.
         // @FIXME: Lock the queue
-        assert(submission_count > 0);
-        Task task = submission_queue[submission_count - 1];
+        pthread_mutex_lock(&submit_lock);
+        assert(submission_queue.size() > 0);
+        auto task = submission_queue.back();
+        submission_queue.pop_back();
+        pthread_mutex_unlock(&submit_lock);
 
         // Work on the puzzles
         for (size_t i = 0; i < task.puzzles.length; i++) {
@@ -96,11 +107,9 @@ void *solver_thread(void *arg) {
         // Notify the scheduler that we're done, and ask it to
         // 1) print the answer,
         // 2) assign new task to me if there's any.
-        completion_queue[completion_count++] = {tid, task.timestamp,
-                                                task.puzzles};
-
-        submission_count--;
-        solved_tasks++;
+        pthread_mutex_lock(&complete_lock);
+        completion_queue.emplace(tid, task.timestamp, task.puzzles);
+        pthread_mutex_unlock(&complete_lock);
 
         sem_post(complete);
     }
@@ -109,33 +118,48 @@ void *solver_thread(void *arg) {
 }
 
 void *printer_thread(void *arg) {
+    size_t last_timestamp = 0;
     while (true) {
         sem_wait(complete);
 
         // Pull a task from completion queue.
-        // @FIXME: Lock these threads.
-        assert(completion_count > 0);
-        TaskResult res = completion_queue[completion_count - 1];
+        // @FIXME: Lock these queues.
+        pthread_mutex_lock(&complete_lock);
+        while (completion_queue.size() > 0) {
+            auto res = completion_queue.top();
 
-        // Print the answers
-        for (size_t i = 0; i < res.puzzles.length; i++) {
-            char *p = res.puzzles[i];
-            print_char_rep(p); printf("\n");
+            if (res.timestamp != last_timestamp + 1) break;
+
+            last_timestamp++;
+            completion_queue.pop();
+
+            // Print the answers
+            for (size_t i = 0; i < res.puzzles.length; i++) {
+                char *p = res.puzzles[i];
+                print_char_rep(p); printf("\n");
+            }
+
+            solved_tasks++;
+
+            sem_post(done);
         }
-
-        completion_count--;
-        sem_post(done);
+        pthread_mutex_unlock(&complete_lock);
 
     }
 }
 
 void init_threads() {
 
-    //int cores = get_number_of_cores();
-    int cores = 2;
+    int cores = get_number_of_cores();
+    //int cores = 3;
     pthread_t solver_threads[cores];
 
     // @FIXME: Clean up semaphores
+    int ret;
+    ret = pthread_mutex_init(&submit_lock, nullptr);
+    assert(ret == 0);
+    ret = pthread_mutex_init(&complete_lock, nullptr);
+    assert(ret == 0);
     submit   = sem_open("/sem_submit",   O_CREAT | O_EXCL, 0644, 0);
     assert(submit != SEM_FAILED);
     complete = sem_open("/sem_complete", O_CREAT | O_EXCL, 0644, 0);
@@ -144,36 +168,47 @@ void init_threads() {
     assert(done != SEM_FAILED);
 
     for (size_t i = 0; i < cores; i++) {
-        int ret = pthread_create(&solver_threads[i], /* TODO: attr? */ nullptr,
+        ret = pthread_create(&solver_threads[i], /* TODO: attr? */ nullptr,
                                  solver_thread, (void *)i);
         assert(ret == 0);
     }
 
     pthread_t printer_tid;
-    int ret = pthread_create(&printer_tid, /* TODO: attr? */ nullptr,
+    ret = pthread_create(&printer_tid, /* TODO: attr? */ nullptr,
                              printer_thread, nullptr);
     assert(ret == 0);
 
-    /*
-    for (size_t i = 0; i < cores; i++) {
-        int ret = pthread_cancel(solver_threads[i]);
-        assert(ret == 0);
-    }
-
-    */
 }
 
 void start_scheduling() {
     char path[4096]; // Hope that TA won't overrun my buffer.
+    size_t curr_timestamp = 1;
     while (scanf("%s", path) != EOF) {
         // @FIXME: Don't blow up the memory
         auto test_file = read_entire_file(path);
         auto puzzles = load_puzzles(test_file);
 
-        submission_queue[submission_count++] = {1, puzzles};
-        total_tasks++;
+        // If less than a batch, schedule everything to one thread.
+        pthread_mutex_lock(&submit_lock);
+        constexpr size_t batch = 1024;
+        if (puzzles.length < batch) {
+            submission_queue.emplace_back(curr_timestamp++, puzzles);
+            total_tasks++;
+            sem_post(submit);
+        } else {
+            for (size_t i = 0; i < puzzles.length; i += batch) {
+                size_t width = std::min(batch, puzzles.length - i);
+                submission_queue.emplace_back(
+                    curr_timestamp++, Slice<char *>(puzzles.data, i, width));
+                total_tasks++;
+            }
 
-        sem_post(submit);
+            for (size_t i = 0; i < puzzles.length; i += batch) {
+                sem_post(submit);
+            }
+        }
+        pthread_mutex_unlock(&submit_lock);
+
     }
 
     while (total_tasks != solved_tasks) {
@@ -183,4 +218,14 @@ void start_scheduling() {
     assert(sem_unlink("/sem_submit") == 0);
     assert(sem_unlink("/sem_complete") == 0);
     assert(sem_unlink("/sem_done") == 0);
+    pthread_mutex_destroy(&submit_lock);
+    pthread_mutex_destroy(&complete_lock);
+}
+
+void start_threading_version() {
+    sem_unlink("/sem_submit");
+    sem_unlink("/sem_complete");
+    sem_unlink("/sem_done");
+    init_threads();
+    start_scheduling();
 }
