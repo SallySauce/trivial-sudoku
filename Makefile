@@ -1,6 +1,8 @@
 SHELL := /bin/bash
 
-N := 1000
+ifdef CI
+	HYPERFINE_COLOR := --style color
+endif
 TEST_FILE := tests/test$(N)
 ANS_FILE  := tests/answer$(N)
 
@@ -18,7 +20,7 @@ verify: sudoku_solve
 	@diff $(ANS_FILE) <(echo "$(TEST_FILE)" | ./sudoku_solve) && echo -e "\033[1;32mYeah!!! Everything looks alright!\033[0m"
 
 bench: sudoku_solve
-	@hyperfine "make verify N=50" "make verify N=1000" "make verify N=10000" --export-json benchmark_report.json
+	@hyperfine "make verify N=50" "make verify N=1000" "make verify N=10000" --export-json benchmark_report.json $(HYPERFINE_COLOR)
 
 test: sudoku_solve
 	./Lab1.sh test_group answer_group
