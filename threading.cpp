@@ -3,6 +3,8 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <assert.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "common.h"
 

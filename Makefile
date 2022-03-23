@@ -5,7 +5,7 @@ TEST_FILE := tests/test$(N)
 ANS_FILE  := tests/answer$(N)
 
 sudoku_solve: main.cpp nanoglass.h bit.h sudoku.h dancing.h bench.cpp threading.cpp
-	g++ main.cpp -g -O3 -o sudoku_solve -std=c++11
+	g++ main.cpp -g -O3 -o sudoku_solve -std=c++11 -lpthread
 
 clean:
 	rm -rf sudoku sudoku.dSYM
