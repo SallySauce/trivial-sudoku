@@ -17,9 +17,12 @@ typedef int32_t  i32;
 #include "dancing.h"
 
 #include "bench.cpp"
+#include "threading.cpp"
 
 int main() {
     //bench();
+    create_workers();
+    /*
     char path[4096]; // Hope that TA won't overrun my buffer.
     int r = scanf("%s", path);
     assert(r == 1);
@@ -34,5 +37,6 @@ int main() {
         //pretty_print_char_rep(p);
         print_char_rep(p); printf("\n");
     }
+    */
     return 0;
 }

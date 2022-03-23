@@ -17,7 +17,7 @@ vector<char *> load_puzzles(EntireFile file) {
     return puzzles;
 }
 
-void pretty_print_char_rep(char p[81]) {
+void pretty_print_char_rep(const char p[81]) {
     for (int i = 0; i < 81; i++) {
         printf("%c ", ".123456789"[p[i] - '0']);
 
