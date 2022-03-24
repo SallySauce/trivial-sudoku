@@ -151,8 +151,8 @@ void *printer_thread(void *arg) {
 
 void init_threads() {
 
-    //int cores = get_number_of_cores();
-    int cores = 7;
+    int cores = get_number_of_cores();
+    //int cores = 7;
     pthread_t solver_threads[cores];
 
     // @FIXME: Clean up semaphores
