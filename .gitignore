@@ -5,3 +5,9 @@ tests_Folder/
 test_group_Folder/
 
 benchmark_report.json
+
+tests/test1000000
+tests/answer1000000
+
+kaggle.txt
+kaggle.csv

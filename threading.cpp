@@ -119,6 +119,7 @@ void *solver_thread(void *arg) {
 
 void *printer_thread(void *arg) {
     size_t last_timestamp = 0;
+
     while (true) {
         sem_wait(complete);
 
@@ -150,8 +151,8 @@ void *printer_thread(void *arg) {
 
 void init_threads() {
 
-    int cores = get_number_of_cores();
-    //int cores = 3;
+    //int cores = get_number_of_cores();
+    int cores = 7;
     pthread_t solver_threads[cores];
 
     // @FIXME: Clean up semaphores
