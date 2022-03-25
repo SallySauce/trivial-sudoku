@@ -8,6 +8,7 @@
 #include <queue>
 #include <vector>
 #include <algorithm>
+#include <unistd.h>
 
 #include "common.h"
 
@@ -123,9 +124,9 @@ void *printer_thread(void *arg) {
     while (true) {
         sem_wait(complete);
 
-        // Pull a task from completion queue.
-        // @FIXME: Lock these queues.
+        std::vector<TaskResult> results;
         pthread_mutex_lock(&complete_lock);
+        // Pull tasks from completion queue.
         while (completion_queue.size() > 0) {
             auto res = completion_queue.top();
 
@@ -134,26 +135,30 @@ void *printer_thread(void *arg) {
             last_timestamp++;
             completion_queue.pop();
 
+            results.push_back(res);
+        }
+        pthread_mutex_unlock(&complete_lock);
+
+        for (auto &res : results) {
+
             // Print the answers
-            for (size_t i = 0; i < res.puzzles.length; i++) {
-                char *p = res.puzzles[i];
-                print_char_rep(p); printf("\n");
-            }
+            const char *newline = "\n";
+            write(STDOUT_FILENO, res.puzzles.data[0], 82 * res.puzzles.length - 1);
+            write(STDOUT_FILENO, newline, 1);
 
             solved_tasks++;
 
             sem_post(done);
         }
-        pthread_mutex_unlock(&complete_lock);
 
     }
 }
 
-void init_threads() {
+void init_threads(int threads) {
 
-    int cores = get_number_of_cores();
-    //int cores = 7;
-    pthread_t solver_threads[cores];
+    if (threads == -1) threads = get_number_of_cores();
+    //threads = 7;
+    pthread_t solver_threads[threads];
 
     // @FIXME: Clean up semaphores
     int ret;
@@ -168,7 +173,7 @@ void init_threads() {
     done     = sem_open("/sem_done", O_CREAT | O_EXCL, 0644, 0);
     assert(done != SEM_FAILED);
 
-    for (size_t i = 0; i < cores; i++) {
+    for (size_t i = 0; i < threads; i++) {
         ret = pthread_create(&solver_threads[i], /* TODO: attr? */ nullptr,
                                  solver_thread, (void *)i);
         assert(ret == 0);
@@ -184,6 +189,8 @@ void init_threads() {
 void start_scheduling() {
     char path[4096]; // Hope that TA won't overrun my buffer.
     size_t curr_timestamp = 1;
+    //strcpy(path, "tests/test1000000");
+    //if (1) {
     while (scanf("%s", path) != EOF) {
         // @FIXME: Don't blow up the memory
         auto test_file = read_entire_file(path);
@@ -192,23 +199,26 @@ void start_scheduling() {
         // If less than a batch, schedule everything to one thread.
         pthread_mutex_lock(&submit_lock);
         constexpr size_t batch = 1024;
+        //constexpr size_t batch = 8192;
+        size_t batches = 0;
         if (puzzles.length < batch) {
             submission_queue.emplace(curr_timestamp++, puzzles);
             total_tasks++;
-            sem_post(submit);
+            batches = 1;
         } else {
             for (size_t i = 0; i < puzzles.length; i += batch) {
                 size_t width = std::min(batch, puzzles.length - i);
                 submission_queue.emplace(curr_timestamp++,
                                          Slice<char *>(puzzles.data, i, width));
                 total_tasks++;
-            }
-
-            for (size_t i = 0; i < puzzles.length; i += batch) {
-                sem_post(submit);
+                batches++;
             }
         }
         pthread_mutex_unlock(&submit_lock);
+
+        for (size_t i = 0; i < batches; i ++) {
+            sem_post(submit);
+        }
 
     }
 
@@ -223,10 +233,10 @@ void start_scheduling() {
     pthread_mutex_destroy(&complete_lock);
 }
 
-void start_threading_version() {
+void start_threading_version(int threads) {
     sem_unlink("/sem_submit");
     sem_unlink("/sem_complete");
     sem_unlink("/sem_done");
-    init_threads();
+    init_threads(threads);
     start_scheduling();
 }

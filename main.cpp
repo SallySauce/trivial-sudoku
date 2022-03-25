@@ -35,8 +35,14 @@ void start_single_thread_version() {
     }
 }
 
-int main() {
-    start_threading_version();
+int main(int argc, char *argv[]) {
+    int threads = -1;
+    if (argc > 2) {
+        if (strcmp(argv[1], "-t") == 0) {
+            threads = atoi(argv[2]);
+        }
+    }
+    start_threading_version(threads);
     // start_single_thread_version();
     return 0;
 }
